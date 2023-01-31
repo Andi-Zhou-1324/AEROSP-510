@@ -1,0 +1,27 @@
+clc
+clear
+close all
+%% 
+theta = 135;
+
+c = cosd(theta);
+s = sind(theta);
+
+k = [c.^2, c.*s, -c.^2, -c*s;
+     s*c, s^2, -s*c, -s^2;
+     -c^2, -c*s, c^2, c*s;
+     -s*c, -s^2, s*c, s^2];
+
+E = 70E9; %Pa
+P = 100; %N
+L = 1.414; %m
+A = 0.0001; %m^2
+
+K = (E*A./L).* [1,0,0,0;
+                0,1,0,-1;
+                0,0,2,-1;
+                0,-1,-1,2];
+
+F = [0;0;P.*cosd(30);-P.*sind(30)];
+
+U = K\F
