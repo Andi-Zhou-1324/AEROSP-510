@@ -25,3 +25,15 @@ K = (E*A./L).* [1,0,0,0;
 F = [0;0;P.*cosd(30);-P.*sind(30)];
 
 U = K\F
+
+
+u = [0;
+     0;
+     0.5229E-5;
+     -0.4873E-5];
+L = sqrt(2);
+theta = 135;
+Area = 2E-4;
+
+tau = E./L.*([-cosd(theta), -sind(theta), cosd(theta), sind(theta)]*u)
+F_axial = tau.*Area
