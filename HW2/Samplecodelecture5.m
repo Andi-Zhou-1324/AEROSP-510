@@ -10,7 +10,7 @@ clc
 
 A = 0.0001;
 alpha = 5E-6;
-D_T = 0;
+D_T = 100;
 co = [1, 1;
       1, 0;
       0, 0;
@@ -122,4 +122,4 @@ sigma
 % Area = [1E-4,2E-4,1E-4,1E-4];
 % sigma.*Area
 % 
-K_copy(5:8,:)*u_copy
+% K_copy(5:8,:)*u_copy

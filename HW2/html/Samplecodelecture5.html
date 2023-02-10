@@ -1,0 +1,348 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Samplecodelecture5</title><meta name="generator" content="MATLAB 9.13"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2023-01-31"><meta name="DC.source" content="Samplecodelecture5.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><pre class="codeinput"><span class="comment">%AE 510 Class</span>
+<span class="comment">%Author: Your instructor</span>
+
+clear
+close <span class="string">all</span>
+clc
+
+<span class="comment">%%%%%%%%%%%%PREPROCESSING%%%%%%%%%%%</span>
+<span class="comment">%coordinate matrix [x,y] for each node</span>
+
+A = 0.0001;
+alpha = 5E-6;
+D_T = 0;
+co = [1, 1;
+      1, 0;
+      0, 0;
+      0, 1];
+
+E = 70E9;
+
+<span class="comment">%element-node connectivity matrix (and area for each truss in column 3)</span>
+e = [4  1   A;
+     2  4   2*A;
+     1  2   A;
+     3  2   A];
+
+Nel = size(e,1);<span class="comment">%number of elements</span>
+Nnodes = size(co,1); <span class="comment">%number of nodes</span>
+nne = 2; <span class="comment">%number of nodes per element</span>
+dof = 2; <span class="comment">%degree of freedom per node</span>
+
+<span class="comment">%%%%%%%%%%%%PREPROCESSING END%%%%%%%%%%%</span>
+
+<span class="comment">%%%Generic block: Initializes global stiffness matrix 'K' and force vector 'F'</span>
+K = zeros(Nnodes*dof,Nnodes*dof);
+F = zeros(Nnodes*dof,1);
+<span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+
+<span class="comment">%%%Assemble Global system - generic FE code for 2D and 3D trusses</span>
+<span class="keyword">for</span> A = 1:Nel
+
+    n = (co(e(A,2),:) - co(e(A,1),:));   <span class="comment">%n = [x2-x1;y2-y1]</span>
+
+    n_2 = co(e(A,2),:);
+    n_1 = co(e(A,1),:);
+
+    L = norm(n); <span class="comment">%length of truss</span>
+
+    n = n./L; <span class="comment">%n = [sin,cos]</span>
+    Area = e(A,3); <span class="comment">%area</span>
+
+    k11 = (E*Area/L)*(n'*n);<span class="comment">%k matrix part = EA/L*[c^2 cs;sc s^2]</span>
+
+    <span class="comment">%local stiffness matrix and force vector</span>
+    localstiffness = [k11 -k11;-k11 k11];    <span class="comment">%full local stiffness matrix</span>
+    localforce = zeros(nne*dof,1);<span class="comment">%external forces are added at the end, so leave as zeros. If temp changes, modify for thermal expansion</span>
+    localforce = localforce + ((E.*Area*alpha*D_T).*[-n./L n./L])';
+    <span class="comment">%DONT TOUCH BELOW BLOCK!! Assembles the global stiffness matrix, Generic block which works for any element</span>
+    <span class="keyword">for</span> B = 1: nne
+        <span class="keyword">for</span> i = 1: dof
+            nK1 = (e(A, B)-1)*dof+i;
+            nKe1 = (B-1)*dof+i;
+            F(nK1) = F(nK1) + localforce(nKe1);
+            <span class="keyword">for</span> C = 1: nne
+                <span class="keyword">for</span> j = 1: dof
+                    nK2 = (e(A, C)-1)*dof+j;
+                    nKe2 = (C-1)*dof+j;
+                    K(nK1, nK2) = K(nK1, nK2) + localstiffness(nKe1, nKe2);
+                <span class="keyword">end</span>
+            <span class="keyword">end</span>
+        <span class="keyword">end</span>
+    <span class="keyword">end</span>
+    <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+
+<span class="keyword">end</span>
+
+K_copy = K;
+<span class="comment">%%%%%%%%%%%%%%%%%%%BOUNDARY CONDITIONS%%%%%%%%%%%%%%%%%%%%%%%</span>
+
+<span class="comment">%external forces</span>
+P = 100;
+F(3) = F(3) + P.*cosd(60);
+F(4) = F(4) - P.*sind(60);
+<span class="comment">%Apply displacement BC by eliminating rows and columns of nodes 3-4 (corresponding to</span>
+<span class="comment">%degrees of freedom 5 to 8) - alternative (and more generic method) is the penalty approach, or</span>
+<span class="comment">%static condensation approach - see later class notes</span>
+
+deletedofs = [5:8];
+K(deletedofs,:) = [];
+K(:,deletedofs) = [];
+F(deletedofs,:) = [];
+
+<span class="comment">%%%%%%%%%%%%%%%%%%%BOUNDARY CONDITIONS END%%%%%%%%%%%%%%%%%%%%%%%</span>
+
+
+<span class="comment">%solve for displacement unknowns (uk)</span>
+uk = K\F
+
+<span class="comment">%expand u to include deleted displacement bcs</span>
+u = ones(Nnodes*dof,1);
+u(deletedofs) = 0;
+I = find(u == 1);
+u(I) = uk;
+
+u_copy = [uk;zeros(4,1)];
+<span class="comment">%%%%%%%%%%%%%POSTPROCESSING%%%%%%%%%%%%%%%%%%%%%</span>
+
+<span class="comment">%%%Step 6:Postprocess results</span>
+<span class="keyword">for</span> i = 1:Nel
+
+    <span class="comment">%get data about truss i</span>
+    n = (co(e(i,2),:) - co(e(i,1),:));
+    L = norm(n);
+    n = n./L;
+
+    Area = e(i,3);
+    n1 = e(i,1);n2 = e(i,2);<span class="comment">%global numbers for node 1 and 2 of truss i</span>
+    d = [u(n1*dof-1) u(n1*dof) u(n2*dof-1) u(n2*dof)]';<span class="comment">%displacements of the two nodes</span>
+    sigma(i) = E*([-n./L n./L]*d) - E*Area*alpha*D_T;<span class="comment">%stress formula, If temp changes, modify for thermal expansion</span>
+<span class="keyword">end</span>
+sigma
+<span class="comment">% Area = [1E-4,2E-4,1E-4,1E-4];</span>
+<span class="comment">% sigma.*Area</span>
+<span class="comment">%</span>
+K_copy(5:8,:)*u_copy
+</pre><pre class="codeoutput">
+uk =
+
+   1.0e-04 *
+
+         0
+   -0.2273
+   -0.0523
+   -0.2273
+
+
+sigma =
+
+   1.0e+05 *
+
+         0    6.1237         0   -3.6603
+
+
+ans =
+
+   36.6025
+         0
+  -86.6025
+   86.6025
+
+</pre><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2022b</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%AE 510 Class
+%Author: Your instructor
+
+clear
+close all
+clc
+
+%%%%%%%%%%%%PREPROCESSING%%%%%%%%%%%
+%coordinate matrix [x,y] for each node
+
+A = 0.0001;
+alpha = 5E-6;
+D_T = 0;
+co = [1, 1;
+      1, 0;
+      0, 0;
+      0, 1];
+ 
+E = 70E9;
+
+%element-node connectivity matrix (and area for each truss in column 3)
+e = [4  1   A;
+     2  4   2*A;
+     1  2   A;
+     3  2   A];
+
+Nel = size(e,1);%number of elements
+Nnodes = size(co,1); %number of nodes
+nne = 2; %number of nodes per element
+dof = 2; %degree of freedom per node
+
+%%%%%%%%%%%%PREPROCESSING END%%%%%%%%%%%
+
+%%%Generic block: Initializes global stiffness matrix 'K' and force vector 'F'
+K = zeros(Nnodes*dof,Nnodes*dof);
+F = zeros(Nnodes*dof,1);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ 
+%%%Assemble Global system - generic FE code for 2D and 3D trusses
+for A = 1:Nel
+ 
+    n = (co(e(A,2),:) - co(e(A,1),:));   %n = [x2-x1;y2-y1] 
+    
+    n_2 = co(e(A,2),:);
+    n_1 = co(e(A,1),:);  
+
+    L = norm(n); %length of truss 
+    
+    n = n./L; %n = [sin,cos]    
+    Area = e(A,3); %area
+    
+    k11 = (E*Area/L)*(n'*n);%k matrix part = EA/L*[c^2 cs;sc s^2]
+     
+    %local stiffness matrix and force vector
+    localstiffness = [k11 -k11;-k11 k11];    %full local stiffness matrix
+    localforce = zeros(nne*dof,1);%external forces are added at the end, so leave as zeros. If temp changes, modify for thermal expansion 
+    localforce = localforce + ((E.*Area*alpha*D_T).*[-n./L n./L])';
+    %DONT TOUCH BELOW BLOCK!! Assembles the global stiffness matrix, Generic block which works for any element    
+    for B = 1: nne
+        for i = 1: dof
+            nK1 = (e(A, B)-1)*dof+i;
+            nKe1 = (B-1)*dof+i;
+            F(nK1) = F(nK1) + localforce(nKe1);
+            for C = 1: nne
+                for j = 1: dof
+                    nK2 = (e(A, C)-1)*dof+j;
+                    nKe2 = (C-1)*dof+j;
+                    K(nK1, nK2) = K(nK1, nK2) + localstiffness(nKe1, nKe2);
+                end
+            end
+        end
+    end 
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    
+end
+
+K_copy = K;
+%%%%%%%%%%%%%%%%%%%BOUNDARY CONDITIONS%%%%%%%%%%%%%%%%%%%%%%%
+ 
+%external forces
+P = 100;
+F(3) = F(3) + P.*cosd(60);
+F(4) = F(4) - P.*sind(60);
+%Apply displacement BC by eliminating rows and columns of nodes 3-4 (corresponding to
+%degrees of freedom 5 to 8) - alternative (and more generic method) is the penalty approach, or
+%static condensation approach - see later class notes
+
+deletedofs = [5:8];
+K(deletedofs,:) = [];
+K(:,deletedofs) = [];
+F(deletedofs,:) = [];
+
+%%%%%%%%%%%%%%%%%%%BOUNDARY CONDITIONS END%%%%%%%%%%%%%%%%%%%%%%%
+
+ 
+%solve for displacement unknowns (uk)
+uk = K\F
+
+%expand u to include deleted displacement bcs
+u = ones(Nnodes*dof,1);
+u(deletedofs) = 0;
+I = find(u == 1);
+u(I) = uk;
+
+u_copy = [uk;zeros(4,1)];
+%%%%%%%%%%%%%POSTPROCESSING%%%%%%%%%%%%%%%%%%%%%
+
+%%%Step 6:Postprocess results
+for i = 1:Nel
+
+    %get data about truss i
+    n = (co(e(i,2),:) - co(e(i,1),:));    
+    L = norm(n);    
+    n = n./L;
+    
+    Area = e(i,3);
+    n1 = e(i,1);n2 = e(i,2);%global numbers for node 1 and 2 of truss i
+    d = [u(n1*dof-1) u(n1*dof) u(n2*dof-1) u(n2*dof)]';%displacements of the two nodes
+    sigma(i) = E*([-n./L n./L]*d) - E*Area*alpha*D_T;%stress formula, If temp changes, modify for thermal expansion 
+end
+sigma
+% Area = [1E-4,2E-4,1E-4,1E-4];
+% sigma.*Area
+% 
+K_copy(5:8,:)*u_copy
+##### SOURCE END #####
+--></body></html>
