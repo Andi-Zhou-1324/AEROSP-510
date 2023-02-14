@@ -8,21 +8,24 @@ clc
 %%%%%%%%%%%%PREPROCESSING%%%%%%%%%%%
 %coordinate matrix [x,y] for each node
 
-A = 0.0001;
+syms l E Area 
+E = 70E9;
+Area = 0.0001;
+l = 1;
+
 alpha = 5E-6;
 D_T = 100;
-co = [1, 1;
-      1, 0;
-      0, 0;
-      0, 1];
+co = [l l
+      l 0
+      0 0
+      0 l];
  
-E = 70E9;
 
 %element-node connectivity matrix (and area for each truss in column 3)
-e = [4  1   A;
-     2  4   2*A;
-     1  2   A;
-     3  2   A];
+e = [1  4   Area;
+     2  4   2*Area;
+     1  2   Area;
+     2  3   Area];
 
 Nel = size(e,1);%number of elements
 Nnodes = size(co,1); %number of nodes
@@ -32,8 +35,8 @@ dof = 2; %degree of freedom per node
 %%%%%%%%%%%%PREPROCESSING END%%%%%%%%%%%
 
 %%%Generic block: Initializes global stiffness matrix 'K' and force vector 'F'
-K = zeros(Nnodes*dof,Nnodes*dof);
-F = zeros(Nnodes*dof,1);
+K = sym(zeros(Nnodes*dof,Nnodes*dof));
+F = sym(zeros(Nnodes*dof,1));
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  
 %%%Assemble Global system - generic FE code for 2D and 3D trusses
@@ -41,8 +44,7 @@ for A = 1:Nel
  
     n = (co(e(A,2),:) - co(e(A,1),:));   %n = [x2-x1;y2-y1] 
     
-    n_2 = co(e(A,2),:);
-    n_1 = co(e(A,1),:);  
+
 
     L = norm(n); %length of truss 
     
@@ -81,6 +83,7 @@ K_copy = K;
 P = 100;
 F(3) = F(3) + P.*cosd(60);
 F(4) = F(4) - P.*sind(60);
+
 %Apply displacement BC by eliminating rows and columns of nodes 3-4 (corresponding to
 %degrees of freedom 5 to 8) - alternative (and more generic method) is the penalty approach, or
 %static condensation approach - see later class notes
@@ -97,7 +100,7 @@ F(deletedofs,:) = [];
 uk = K\F
 
 %expand u to include deleted displacement bcs
-u = ones(Nnodes*dof,1);
+u = sym(ones(Nnodes*dof,1));
 u(deletedofs) = 0;
 I = find(u == 1);
 u(I) = uk;
@@ -114,8 +117,15 @@ for i = 1:Nel
     n = n./L;
     
     Area = e(i,3);
-    n1 = e(i,1);n2 = e(i,2);%global numbers for node 1 and 2 of truss i
-    d = [u(n1*dof-1) u(n1*dof) u(n2*dof-1) u(n2*dof)]';%displacements of the two nodes
+    n1 = e(i,1); n2 = e(i,2); 
+    if dof == 3
+        n3 = e(i,3);
+        d = [u(n1*dof-2) u(n1*dof-1) u(n1*dof) u(n2*dof-2) u(n2*dof-1) u(n2*dof)]';
+    else
+        d = [u(n1*dof-1), u(n1*dof), u(n2*dof-1), u(n2*dof)]';
+    end
+    %global numbers for node 1 and 2 of truss i
+ 
     sigma(i) = E*([-n./L n./L]*d) - E*alpha*D_T;%stress formula, If temp changes, modify for thermal expansion 
 end
 
