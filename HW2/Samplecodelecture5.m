@@ -54,7 +54,7 @@ for A = 1:Nel
     %local stiffness matrix and force vector
     localstiffness = [k11 -k11;-k11 k11];    %full local stiffness matrix
     localforce = zeros(nne*dof,1);%external forces are added at the end, so leave as zeros. If temp changes, modify for thermal expansion 
-    localforce = localforce + ((E.*Area*alpha*D_T).*[-n./L n./L])';
+    localforce = localforce + ((E.*Area*alpha*D_T).*[-n, n])';
     %DONT TOUCH BELOW BLOCK!! Assembles the global stiffness matrix, Generic block which works for any element    
     for B = 1: nne
         for i = 1: dof
@@ -116,8 +116,9 @@ for i = 1:Nel
     Area = e(i,3);
     n1 = e(i,1);n2 = e(i,2);%global numbers for node 1 and 2 of truss i
     d = [u(n1*dof-1) u(n1*dof) u(n2*dof-1) u(n2*dof)]';%displacements of the two nodes
-    sigma(i) = E*([-n./L n./L]*d) - E*Area*alpha*D_T;%stress formula, If temp changes, modify for thermal expansion 
+    sigma(i) = E*([-n./L n./L]*d) - E*alpha*D_T;%stress formula, If temp changes, modify for thermal expansion 
 end
+
 sigma
 % Area = [1E-4,2E-4,1E-4,1E-4];
 % sigma.*Area
