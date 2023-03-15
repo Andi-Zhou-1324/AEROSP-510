@@ -8,26 +8,27 @@ clc
 %%%%%%%%%%%%PREPROCESSING%%%%%%%%%%%
 %coordinate matrix [x,y] for each node
 
-A = 0.0001;
+A = 0.03^2;
 alpha = 5E-6;
-D_T = 100;
-co = [1, 1;
-      1, 0;
-      0, 0;
-      0, 1];
+D_T = 0;
+co = [1, 1, 0;
+     -1, 1, 0;
+      1,-1, 0;
+      -1,-1, 0;
+      0,0,1];
  
-E = 70E9;
+E = 210E9;
 
 %element-node connectivity matrix (and area for each truss in column 3)
-e = [4  1   A;
-     2  4   2*A;
-     1  2   A;
-     3  2   A];
+e = [1  5   A;
+     2  5   A;
+     3  5   A;
+     4  5   A];
 
 Nel = size(e,1);%number of elements
 Nnodes = size(co,1); %number of nodes
 nne = 2; %number of nodes per element
-dof = 2; %degree of freedom per node
+dof = 3; %degree of freedom per node
 
 %%%%%%%%%%%%PREPROCESSING END%%%%%%%%%%%
 
@@ -41,8 +42,7 @@ for A = 1:Nel
  
     n = (co(e(A,2),:) - co(e(A,1),:));   %n = [x2-x1;y2-y1] 
     
-    n_2 = co(e(A,2),:);
-    n_1 = co(e(A,1),:);  
+
 
     L = norm(n); %length of truss 
     
@@ -54,7 +54,7 @@ for A = 1:Nel
     %local stiffness matrix and force vector
     localstiffness = [k11 -k11;-k11 k11];    %full local stiffness matrix
     localforce = zeros(nne*dof,1);%external forces are added at the end, so leave as zeros. If temp changes, modify for thermal expansion 
-    localforce = localforce + ((E.*Area*alpha*D_T).*[-n./L n./L])';
+    localforce = localforce + ((E.*Area*alpha*D_T).*[-n, n])';
     %DONT TOUCH BELOW BLOCK!! Assembles the global stiffness matrix, Generic block which works for any element    
     for B = 1: nne
         for i = 1: dof
@@ -78,9 +78,9 @@ K_copy = K;
 %%%%%%%%%%%%%%%%%%%BOUNDARY CONDITIONS%%%%%%%%%%%%%%%%%%%%%%%
  
 %external forces
-P = 100;
-F(3) = F(3) + P.*cosd(60);
-F(4) = F(4) - P.*sind(60);
+P = 1E3;
+
+F(end) = F(end) - 1E3;
 %Apply displacement BC by eliminating rows and columns of nodes 3-4 (corresponding to
 %degrees of freedom 5 to 8) - alternative (and more generic method) is the penalty approach, or
 %static condensation approach - see later class notes
@@ -116,8 +116,9 @@ for i = 1:Nel
     Area = e(i,3);
     n1 = e(i,1);n2 = e(i,2);%global numbers for node 1 and 2 of truss i
     d = [u(n1*dof-1) u(n1*dof) u(n2*dof-1) u(n2*dof)]';%displacements of the two nodes
-    sigma(i) = E*([-n./L n./L]*d) - E*Area*alpha*D_T;%stress formula, If temp changes, modify for thermal expansion 
+    sigma(i) = E*([-n./L n./L]*d) - E*alpha*D_T;%stress formula, If temp changes, modify for thermal expansion 
 end
+
 sigma
 % Area = [1E-4,2E-4,1E-4,1E-4];
 % sigma.*Area
