@@ -1,60 +1,67 @@
 %AE 510 Class
 %Author: Your instructor
+%Modified by: Andi Zhou
 
 clear
 close all
 clc
+%% Main
 
 %%%%%%%%%%%%PREPROCESSING%%%%%%%%%%%
-%coordinate matrix [x,y] for each node
+%% coordinate matrix [x,y] for each node
 
-A = 0.03^2;
-alpha = 5E-6;
+syms E Area l a
+%A = 0.0001;
+alpha = a;
 D_T = 100;
-co = [1, 1, 0;
-     -1, 1, 0;
-      1,-1, 0;
-      -1,-1, 0;
-      0,0,1];
- 
-E = 210E9;
 
-%element-node connectivity matrix (and area for each truss in column 3)
-e = [1  5   A;
-     2  5   A;
-     3  5   A;
-     4  5   A];
+co = [1, 1;
+      1, 0;
+      0, 0;
+      0, 1].*l;
+ 
+%E = 70E9;
+
+%% element-node connectivity matrix (and area for each truss in column 3)
+e = [4  1   Area;
+     2  4   2*Area;
+     1  2   Area;
+     3  2   Area];
 
 Nel = size(e,1);%number of elements
 Nnodes = size(co,1); %number of nodes
 nne = 2; %number of nodes per element
-dof = 3; %degree of freedom per node
+dof = 2; %degree of freedom per node
 
 %%%%%%%%%%%%PREPROCESSING END%%%%%%%%%%%
 
 %%%Generic block: Initializes global stiffness matrix 'K' and force vector 'F'
-K = zeros(Nnodes*dof,Nnodes*dof);
-F = zeros(Nnodes*dof,1);
+K = sym(zeros(Nnodes*dof,Nnodes*dof));
+F = sym(zeros(Nnodes*dof,1));
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  
 %%%Assemble Global system - generic FE code for 2D and 3D trusses
 for A = 1:Nel
- 
-    n = (co(e(A,2),:) - co(e(A,1),:));   %n = [x2-x1;y2-y1] 
+    %Looping through elements
+
+    n = (co(e(A,2),:) - co(e(A,1),:));   %Compute vector that points from 1 -> 2 
     
-
-
+    n_2 = co(e(A,2),:);
+    n_1 = co(e(A,1),:);  
+    
+    assume(norm(n) > 0);
     L = norm(n); %length of truss 
-    
+
     n = n./L; %n = [sin,cos]    
     Area = e(A,3); %area
     
-    k11 = (E*Area/L)*(n'*n);%k matrix part = EA/L*[c^2 cs;sc s^2]
+    k11 = simplify((E*Area/L)*(n'*n));%k matrix part = EA/L*[c^2 cs;sc s^2]
      
     %local stiffness matrix and force vector
     localstiffness = [k11 -k11;-k11 k11];    %full local stiffness matrix
     localforce = zeros(nne*dof,1);%external forces are added at the end, so leave as zeros. If temp changes, modify for thermal expansion 
-    localforce = localforce + ((E.*Area*alpha*D_T).*[-n, n])';
+    localforce = localforce + ((E.*Area*alpha*D_T).*[-n n])';
+
     %DONT TOUCH BELOW BLOCK!! Assembles the global stiffness matrix, Generic block which works for any element    
     for B = 1: nne
         for i = 1: dof
@@ -73,6 +80,7 @@ for A = 1:Nel
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
 end
+K = simplify(K);
 
 K_copy = K;
 %%%%%%%%%%%%%%%%%%%BOUNDARY CONDITIONS%%%%%%%%%%%%%%%%%%%%%%%
@@ -97,7 +105,7 @@ F(deletedofs,:) = [];
 uk = K\F
 
 %expand u to include deleted displacement bcs
-u = ones(Nnodes*dof,1);
+u = sym(ones(Nnodes*dof,1));
 u(deletedofs) = 0;
 I = find(u == 1);
 u(I) = uk;
@@ -118,8 +126,8 @@ for i = 1:Nel
     d = [u(n1*dof-1) u(n1*dof) u(n2*dof-1) u(n2*dof)]';%displacements of the two nodes
     sigma(i) = E*([-n./L n./L]*d) - E*alpha*D_T;%stress formula, If temp changes, modify for thermal expansion 
 end
-
 sigma
+
 % Area = [1E-4,2E-4,1E-4,1E-4];
 % sigma.*Area
 % 
