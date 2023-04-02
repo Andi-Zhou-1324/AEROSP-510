@@ -1,7 +1,7 @@
 clear
 close all
 
-N_vec = [1,25,100,400,1600,6400,8100];
+N_vec = [1];
 tau_vec = zeros(3,size(N_vec,2));
 for count = 1:size(N_vec,2)
     N = N_vec(count);
@@ -86,6 +86,9 @@ for count = 1:size(N_vec,2)
     
     node_elem = e(elem,:);
     
+    node_elem_temp = node_elem(3);
+    node_elem(3) = node_elem(4);
+    node_elem(4) = node_elem_temp;
     xi = abs(1-co(node_elem(1),1))./(abs(co(node_elem(1)) - co(node_elem(2),1)));
     eta = 0;
     
