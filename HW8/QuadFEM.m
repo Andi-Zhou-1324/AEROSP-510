@@ -89,8 +89,8 @@ for count = 1:size(N_vec,2)
     node_elem_temp = node_elem(3);
     node_elem(3) = node_elem(4);
     node_elem(4) = node_elem_temp;
-    xi = abs(1-co(node_elem(1),1))./(abs(co(node_elem(1)) - co(node_elem(2),1)));
-    eta = 0;
+    xi = abs(1-co(node_elem(1),1))./(abs(co(node_elem(1),1) - co(node_elem(2),1))); %%THIS IS WRONG FIX IT
+    eta = -1;
     
     E = 70e9;
     nu = 0.3;
@@ -124,8 +124,8 @@ function [N, J, B] = element(xi, eta, coords) %hw6, p1
     J = dNdxi*coords;
     dN = J \ dNdxi;
     B = [dN(1, 1) 0 dN(1, 2) 0 dN(1, 3) 0 dN(1, 4) 0
-    0 dN(2, 1) 0 dN(2, 2) 0 dN(2, 3) 0 dN(2, 4)
-    dN(2, 1) dN(1, 1) dN(2, 2) dN(1, 2) dN(2, 3) dN(1, 3) dN(2, 4) dN(1, 4)
+        0 dN(2, 1) 0 dN(2, 2) 0 dN(2, 3) 0 dN(2, 4)
+        dN(2, 1) dN(1, 1) dN(2, 2) dN(1, 2) dN(2, 3) dN(1, 3) dN(2, 4) dN(1, 4)
     ];
 end
 
