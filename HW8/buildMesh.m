@@ -36,7 +36,7 @@ for i = 1:N
 end
 
 nodes = [reshape(coord_x',[],1),reshape(coord_y',[],1)];
-
+% figure()
 % patch('Faces',E2N,'Vertices',nodes,'FaceColor','none')
 
 

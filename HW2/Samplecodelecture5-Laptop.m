@@ -11,10 +11,10 @@ clc
 A = 0.0001;
 alpha = 5E-6;
 D_T = 100;
-co = [1, 1;
-      1, 0;
-      0, 0;
-      0, 1];
+co = [1, 1, 0;
+      1, 0, 0;
+      0, 0, 0;
+      0, 1, 0];
  
 E = 70E9;
 
@@ -27,7 +27,7 @@ e = [4  1   A;
 Nel = size(e,1);%number of elements
 Nnodes = size(co,1); %number of nodes
 nne = 2; %number of nodes per element
-dof = 2; %degree of freedom per node
+dof = size(co,2); %degree of freedom per node
 
 %%%%%%%%%%%%PREPROCESSING END%%%%%%%%%%%
 

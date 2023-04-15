@@ -1,7 +1,7 @@
 clear
 close all
 
-N_vec = [1];
+N_vec = [1,25,100,400,1600,50^2,60^2,70^2,80^2,90^2];
 tau_vec = zeros(3,size(N_vec,2));
 for count = 1:size(N_vec,2)
     N = N_vec(count);
@@ -89,7 +89,7 @@ for count = 1:size(N_vec,2)
     node_elem_temp = node_elem(3);
     node_elem(3) = node_elem(4);
     node_elem(4) = node_elem_temp;
-    xi = abs(1-co(node_elem(1),1))./(abs(co(node_elem(1),1) - co(node_elem(2),1))); %%THIS IS WRONG FIX IT
+    xi = (abs(1-co(node_elem(1),1))./(abs(co(node_elem(1),1) - co(node_elem(2),1)))).*2-1 %%THIS IS WRONG FIX IT
     eta = -1;
     
     E = 70e9;
@@ -107,6 +107,7 @@ for count = 1:size(N_vec,2)
     tau = D*B*q;
     tau_vec(:,count) = tau;
 end
+%% Post Processing
 
 plot(N_vec,tau_vec,'LineWidth',1.5)
 set(gca,'Xscale','log')
@@ -114,6 +115,14 @@ grid on
 legend('\tau_x','\tau_y','\tau_{xy}','Location','NorthWest')
 xlabel('N')
 ylabel('\tau (Pa)')
+
+%% 
+tau_x = tau_vec(1,:)';
+tau_y = tau_vec(2,:)';
+tau_xy= tau_vec(3,:)';
+N = N_vec';
+
+table(N,tau_x,tau_y,tau_xy)
 
 %% Functions Declared
 function [N, J, B] = element(xi, eta, coords) %hw6, p1
