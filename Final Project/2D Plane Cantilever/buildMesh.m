@@ -1,10 +1,9 @@
-function [nodes,E2N] = buildMesh(N_total)
+function [nodes,E2N] = buildMesh(N)
 nodes_origin = [0,0;
                 0.904,0;
                 0.904,0.2;
                 0,0.2];
 
-N = sqrt(N_total);
 
 bottomEdge_x = linspace(nodes_origin(1,1),nodes_origin(2,1),N+1);
 bottomEdge_y = linspace(nodes_origin(1,2),nodes_origin(2,2),N+1);
@@ -36,7 +35,7 @@ for i = 1:N
 end
 
 nodes = [reshape(coord_x',[],1),reshape(coord_y',[],1)];
-% 
+
 % patch('Faces',E2N,'Vertices',nodes,'FaceColor','none')
 % axis equal
 

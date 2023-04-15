@@ -1,8 +1,8 @@
 function [nodes,E2N] = buildMesh(N_total)
-nodes_origin = [0,-1;
-                5,-1;
-                5,0;
-                0,0];
+nodes_origin = [0,0;
+                2,0;
+                2,1;
+                0,2];
 
 N = sqrt(N_total);
 

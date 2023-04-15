@@ -3,8 +3,10 @@ clear
 close all
 
 
-N = 100;
+N = 10000;
 [co,e] = buildMesh(N);%write a mesh function: this is a one element mesh now for HW6
+
+t = 0.01;
 
 Nel = size(e,1);%number of elements
 Nnodes = size(co,1); %number of nodes
@@ -24,13 +26,13 @@ for A = 1:Nel
     
     %local stiffness matrix and force vector 
     F_body = [0;0];
-    localbodyf = localbody(intpts,coord,F_body); %hw6, p2 
-    F_tr = [0;-1E7];
-    tr_node = find(coord(:,1)==5);%find nodes (for which x = 2, HW6) where traction is applied
-    localtracf = localtraction(tr_node,coord,F_tr); % HW6, p3
+    localbodyf = localbody(intpts,coord,F_body,t); %hw6, p2 
+    F_tr = [-11439600;0];
+    tr_node = find(coord(:,1)==0.904);%find nodes (for which x = 2, HW6) where traction is applied
+    localtracf = localtraction(tr_node,coord,F_tr,t); % HW6, p3
     localforce = localbodyf + localtracf; 
     
-    localstiffness = localstiffnessmat(intpts,coord); %HW6, p4
+    localstiffness = localstiffnessmat(intpts,coord,t); %HW6, p4
     
     
     %DONT TOUCH BELOW BLOCK!! Assembles the global stiffness matrix, Generic 
@@ -76,14 +78,13 @@ hold on
 patch('Faces',e,'Vertices',co,'FaceColor','none')
 nodes_displaced = co + reshape(u,2,[])';
 patch('Faces',e,'Vertices',nodes_displaced,'FaceColor','none','EdgeColor','Red')
-axis equal
 hold off
-
+axis equal
 %%%Post-Process for stress
 
 E = 70e9;
 nu = 0.3;
-D = E/(1+nu)/(1-2*nu) * [ 1-nu nu 0 ; nu 1-nu 0 ; 0 0 1/2-nu ];
+D = E/(1-nu^2) * [ 1 nu 0 ; nu 1 0 ; 0 0 (1-nu)/2 ];
 
 figure()
 hold on
@@ -103,7 +104,10 @@ for i = 1:Nel
         u_node = [2*e(i,:)-1;2*e(i,:)];
         q = u(u_node(:));
         tau = D*B*q;
-        tau_vec(j) = tau(1);
+        
+        tau_von_mise = sqrt(tau(1).^2 - (tau(1).*tau(2)) + tau(2).^2 + (3.*tau(3).^2));
+
+        tau_vec(j) = tau_von_mise;
     end
     
     patch('Faces',[1,2,3,4],'Vertices',quad_coord,'FaceVertexCData',tau_vec','FaceColor','interp','EdgeColor','none')
@@ -124,31 +128,29 @@ function [N, J, B] = element(xi, eta, coords) %hw6, p1
     ];
 end
 
-function f = localbody(intpts,coords,F_body)
+function f = localbody(intpts,coords,F_body,t)
     f = zeros(8,1);
-    t = 1;
+
     for i = 1:size(intpts,1)
         [N, J, B] = element(intpts(i,1), intpts(i,2), coords);
         f = f + N'*F_body*det(J)*t;
     end
 end
 
-function k = localstiffnessmat(intpts,coords)
+function k = localstiffnessmat(intpts,coords,t)
     k = zeros(8,8);
-    t = 1;
     E = 70e9;
     nu = 0.3;
-    D = E/(1+nu)/(1-2*nu) * [ 1-nu nu 0 ; nu 1-nu 0 ; 0 0 1/2-nu ];
+    D = E/(1-nu^2) * [ 1 nu 0 ; nu 1 0 ; 0 0 (1-nu)/2 ];
     for i = 1:size(intpts,1)
         [N, J, B] = element(intpts(i,1), intpts(i,2), coords);
         k = k + B'*D*B*det(J)*t;
     end
 end
 
-function f = localtraction(tr_node,coords,F_tr)
+function f = localtraction(tr_node,coords,F_tr,t)
     f = zeros(8,1);
     if length(tr_node) > 0 %if nodes have traction
-        t = 1; 
         intpts = [1 1/sqrt(3);1 -1/sqrt(3)]; 
         for i = 1:size(intpts,1)
             [N, J, B] = element(intpts(i,1), intpts(i,2), coords);

@@ -5,23 +5,49 @@ clear
 close all
 clc
 
+%2D Truss simulation that simulates the full head-on collision of the drone
+%with the wall at 50 miles/hr
+
 %%%%%%%%%%%%PREPROCESSING%%%%%%%%%%%
 %coordinate matrix [x,y] for each node
+length_bar = 0.271; %meter
+height_bar = 0.01; %meter
 
-A = 0.0001;
+A = length_bar.*height_bar;
 alpha = 5E-6;
 D_T = 100;
-co = [-1, 1, 0;
-      1, 1, 0;
-      0, 1, -1;
-      0, 0, 0];
- 
+co = [0,0,0;
+      -1.47,0,0;
+      0.34,-0.71,-0.55;
+      -0.735,-0.71,-0.55;
+      -1.81,-0.71,-0.55;
+      -0.25,-1.42,-1.09;
+      -1.22,-1.42,-1.09;];
+
+co(:,3) = [];
+
+figure()
+scatter(co(:,1),co(:,2));
+
+E2N = [1,2;
+       1,3;
+       1,4;
+       2,5;
+       2,4;
+       4,5;
+       3,4;
+       5,7;
+       7,6;
+       3,6;
+       4,7;
+       4,6];
+
+figure
+plot_edge(co,E2N,'k',true);
 E = 70E9;
 
 %element-node connectivity matrix (and area for each truss in column 3)
-e = [1  4   A;
-     2  4   A;
-     3  4   A];
+e = [E2N,repmat(A,size(E2N,1),1)];
 
 Nel = size(e,1);%number of elements
 Nnodes = size(co,1); %number of nodes
@@ -72,15 +98,23 @@ end
 
 K_copy = K;
 %%%%%%%%%%%%%%%%%%%BOUNDARY CONDITIONS%%%%%%%%%%%%%%%%%%%%%%%
- 
+
+Weight_Drone = 43.0913;
+
+
 %external forces
-P = 100;
-F(10) = F(10) - P.*sind(60);
+force_node = [6;7];
+
+
+F = assignForce(F,force_node, repmat([0,11439600/2],size(force_node,1),1),dof);
+
 %Apply displacement BC by eliminating rows and columns of nodes 3-4 (corresponding to
 %degrees of freedom 5 to 8) - alternative (and more generic method) is the penalty approach, or
 %static condensation approach - see later class notes
 
-deletedofs = [1:9];
+Nodes_fixed = [1;2];
+deletedofs = fixNode(Nodes_fixed,dof);
+
 K(deletedofs,:) = [];
 K(:,deletedofs) = [];
 F(deletedofs,:) = [];
@@ -115,3 +149,57 @@ for i = 1:Nel
     sigma(i) = E*([-n./L n./L]*d) - E*Area*alpha*D_T;%stress formula, If temp changes, modify for thermal expansion 
 end
 sigma
+hold off
+%%% Plotting Results
+figure
+hold on
+plot_edge(co,E2N,'k',true);
+
+plot_edge(co + reshape(u,dof,[])',E2N,'r',false);
+
+%% Functions Declared
+function [deletedofs] = fixNode(nodes,dof)
+    deletedofs = [];
+    for i = 1:size(nodes,1)
+        n1 = nodes(i);
+        temp =n1*dof;
+        deletedofs = [deletedofs;temp'];
+    end
+   
+end
+
+function [F] = assignForce(F,node,forces,dof)
+    %node: an array of node number
+    %forces: [nNode x dof] force array
+    for i = 1:size(node,1)
+        n1 = node(i);
+        F(n1*dof-dof+1:n1*dof) = forces(i,:)';
+    end
+
+
+end
+
+function plot_edge(nodal_list, connectivity_matrix,color,labelSwitch)
+    x = nodal_list(:, 1);
+    y = nodal_list(:, 2);
+    
+    % Plot nodes with labels
+    if labelSwitch
+        for i = 1:size(nodal_list, 1)
+            text(x(i), y(i), num2str(i), 'Color', 'b', 'FontSize', 12);
+            hold on;
+        end
+    end
+
+    % Plot edges
+    for i = 1:size(connectivity_matrix, 1)
+        start_node = nodal_list(connectivity_matrix(i, 1), :);
+        end_node = nodal_list(connectivity_matrix(i, 2), :);
+        plot([start_node(1), end_node(1)], [start_node(2), end_node(2)], 'Color', color);
+    end
+
+    xlabel('x')
+    ylabel('y')
+    zlabel('z')
+    axis equal
+end
