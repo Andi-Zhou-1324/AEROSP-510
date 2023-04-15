@@ -1,10 +1,8 @@
 clear
 close all
 
-N_vec = [1];
-tau_vec = zeros(3,size(N_vec,2));
 
-N = N_vec(count);
+N = 100;
 [co,e] = buildMesh(N);%write a mesh function: this is a one element mesh now for HW6
 
 Nel = size(e,1);%number of elements
@@ -13,7 +11,7 @@ nne = 4; %number of nodes per element
 dof = 2; %degree of freedom per node
 %%%%%%%%%%%%PREPROCESSING END%%%%%%%%%%%
 %%%Generic block: Initializes global stiffness matrix 'K' and force vector 'F'
-K = zeros(Nnodes*dof,Nnodes*dof);
+K = sparse(Nnodes*dof,Nnodes*dof);
 F = zeros(Nnodes*dof,1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -23,10 +21,11 @@ for A = 1:Nel
     intpts = (1/sqrt(3))*[-1 -1;1 -1;1 1;-1 1]; %set of integration points, same for every element
     
     %local stiffness matrix and force vector 
-    localbodyf = localbody(intpts,coord); %hw6, p2 
-    
-    tr_node = find(coord(:,1)==2);%find nodes (for which x = 2, HW6) where traction is applied
-    localtracf = localtraction(tr_node,coord); % HW6, p3
+    F_body = [0;0];
+    localbodyf = localbody(intpts,coord,F_body); %hw6, p2 
+    F_tr = [0;-1E7];
+    tr_node = find(coord(:,1)==5);%find nodes (for which x = 2, HW6) where traction is applied
+    localtracf = localtraction(tr_node,coord,F_tr); % HW6, p3
     localforce = localbodyf + localtracf; 
     
     localstiffness = localstiffnessmat(intpts,coord); %HW6, p4
@@ -69,51 +68,50 @@ I = find(u == 1);
 u(I) = uk;
 
 
-%%%write a code for postprocessing the stress at 1,0
+figure()
 
-%Find the element that contains the node
-bottom_co = co(1:sqrt(N)+1,:); %Obtaining coordinates of node at y = 0
+hold on
+patch('Faces',e,'Vertices',co,'FaceColor','none')
+nodes_displaced = co + reshape(u,2,[])';
+patch('Faces',e,'Vertices',nodes_displaced,'FaceColor','none','EdgeColor','Red')
+axis equal
+hold off
 
-D = vecnorm([1,0] - bottom_co,2,2);
-[~,closest_n] = sort(D,'ascend');
-closest_n = closest_n(1:2);
-
-logi_1 = sum(e == closest_n(1),2);
-logi_2 = sum(e == closest_n(2),2);
-
-logi = logi_1 + logi_2;
-elem = find(logi == 2);
-
-node_elem = e(elem,:);
-
-node_elem_temp = node_elem(3);
-node_elem(3) = node_elem(4);
-node_elem(4) = node_elem_temp;
-xi = abs(1-co(node_elem(1),1))./(abs(co(node_elem(1),1) - co(node_elem(2),1))); %%THIS IS WRONG FIX IT
-eta = -1;
+%%%Post-Process for stress
 
 E = 70e9;
 nu = 0.3;
 D = E/(1+nu)/(1-2*nu) * [ 1-nu nu 0 ; nu 1-nu 0 ; 0 0 1/2-nu ];
 
-quad_coord = co(node_elem,:);
+figure()
+hold on
+axis equal
+for i = 1:Nel
+    int_Coord = [-1,-1;
+                 1,-1;
+                 1,1;
+                 -1,1];
 
-[~,~,B] = element(xi,eta,quad_coord);
+    node_elem = e(i,:);
+    node_elem = swaparray(node_elem,3,4);
+    quad_coord = nodes_displaced(node_elem,:);
 
-u_node = [2*node_elem-1;2*node_elem];
+    
 
-q = u(u_node(:));
+    tau_vec = zeros(1,4);
+    for j = 1:size(int_Coord,1)
+        [~,~,B] = element(int_Coord(j,1),int_Coord(j,2),quad_coord);
 
-tau = D*B*q;
-tau_vec(:,count) = tau;
-
-
-plot(N_vec,tau_vec,'LineWidth',1.5)
-set(gca,'Xscale','log')
-grid on
-legend('\tau_x','\tau_y','\tau_{xy}','Location','NorthWest')
-xlabel('N')
-ylabel('\tau (Pa)')
+        
+        u_node = [2*node_elem(i,:)-1;2*e(i,:)];
+        q = u(u_node(:));
+        tau = D*B*q;
+        tau_vec(j) = tau(1);
+    end
+    
+    patch('Faces',[1,2,3,4],'Vertices',quad_coord,'FaceVertexCData',tau_vec','FaceColor','interp','EdgeColor','none')
+end
+colorbar
 
 %% Functions Declared
 function [N, J, B] = element(xi, eta, coords) %hw6, p1
@@ -129,12 +127,12 @@ function [N, J, B] = element(xi, eta, coords) %hw6, p1
     ];
 end
 
-function f = localbody(intpts,coords)
+function f = localbody(intpts,coords,F_body)
     f = zeros(8,1);
     t = 1;
     for i = 1:size(intpts,1)
         [N, J, B] = element(intpts(i,1), intpts(i,2), coords);
-        f = f + N'*[0;1E6]*det(J)*t;
+        f = f + N'*F_body*det(J)*t;
     end
 end
 
@@ -150,7 +148,7 @@ function k = localstiffnessmat(intpts,coords)
     end
 end
 
-function f = localtraction(tr_node,coords)
+function f = localtraction(tr_node,coords,F_tr)
     f = zeros(8,1);
     if length(tr_node) > 0 %if nodes have traction
         t = 1; 
@@ -158,10 +156,13 @@ function f = localtraction(tr_node,coords)
         for i = 1:size(intpts,1)
             [N, J, B] = element(intpts(i,1), intpts(i,2), coords);
             detJstar = sqrt(J(2,1)^2 + J(2,2)^2); 
-            f = f + N'*[1e6;0]*detJstar*t;
+            f = f + N'*F_tr*detJstar*t;
         end
     end
 end
+
+
+
 % function [co,e,elem,loc] = genmesh(nelem)
 %     %for HW7, you need to write a meshing code
 %     %make sure the elements are numbered ccw such that the face on which traction 
