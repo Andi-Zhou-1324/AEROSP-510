@@ -37,6 +37,6 @@ end
 
 nodes = [reshape(coord_x',[],1),reshape(coord_y',[],1)];
 
-% patch('Faces',E2N,'Vertices',nodes,'FaceColor','none')
-% axis equal
+patch('Faces',E2N,'Vertices',nodes,'FaceColor','none')
+axis equal
 
