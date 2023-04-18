@@ -5,31 +5,16 @@ close all
 hw7
 function hw7 %function to do convergence study
         stress_max = [];
+        endNELEM = 100;
         for nelem = 2:2:50
-            [max_stress] = FEMquad(nelem,50);
+            [max_stress] = FEMquad(nelem,endNELEM);
             stress_max = [stress_max,max_stress];
         end
-        figure()
-        plot((2:2:50).^2,stress_max);
-        legend('\tau_x','\tau_y','\tau_{xy}')
-        xlabel('Number of Elements')
-        ylabel('Stress Unit (Pa)')
 
-        figure(3)
-        subplot(3,1,1)
-        title('\tau_x (Pa)')
-        colorbar
-        subplot(3,1,2)
-        title('\tau_y (Pa)')
-        ylabel('y(m)')
-        colorbar
-        subplot(3,1,3)
-        title('\tau_{xy} (Pa)')
-        colorbar
-        xlabel('x(m)')
+        plot(2:2:50,stress_max);
 end
 
-function [max_stress] = FEMquad(nelem,ENDELEM)
+function [max_stress] = FEMquad(nelem,endNELEM)
     %Main FEA code for hw6, input nelem is the number of elements along x-axis
     %only even nelem here
     [co,e] = genmesh(nelem);
@@ -58,7 +43,7 @@ function [max_stress] = FEMquad(nelem,ENDELEM)
         localstiffness = localstiffnessmat(intpts,coord); %HW6, p3
         localforce = localbody(intpts,coord); %hw6, p2
         
-        tr_node = find(coord(:,1)==max(co(:,1)));%find nodes (for which x = 2, HW6) wheretraction is applied
+        tr_node = find(coord(:,1)==2);%find nodes (for which x = 2, HW6) wheretraction is applied
         localforce = localforce + localtraction(tr_node,coord); % HW6, p4
         
         
@@ -100,29 +85,24 @@ function [max_stress] = FEMquad(nelem,ENDELEM)
     %%%stress matrix for different number of elements
     E = 70e9;
     nu = 0.3;
-    D = E/(1-nu^2).*[1, nu, 0;nu,1,0;0,0,(1-nu)/2];
+    D = E/(1+nu)/(1-2*nu) * [ 1-nu nu 0 ; nu 1-nu 0 ; 0 0 1/2-nu ];
     
-    if nelem == ENDELEM
+    if nelem == endNELEM
         figure()
         axis equal
         hold on
         patch('Faces',e,'Vertices',co,'FaceColor','none','EdgeColor','k')
-        patch('Faces',e,'Vertices',co + reshape(u.*1E2,2,[])','FaceColor','none','EdgeColor','r')
+        patch('Faces',e,'Vertices',co + reshape(u.*100,2,[])','FaceColor','none','EdgeColor','r')
         hold off
-        title('Resulting Deformation (Magnified x1E2)')
-        xlabel('x')
-        ylabel('y(1/1E2 m)')
-        xlabel('x(1/1E2 m)')
     end
 
-    if nelem == ENDELEM
+    if nelem == endNELEM
         figure()
-        hold on
-        colorbar
-        axis equal
     end
 
-
+    hold on
+    colorbar
+    axis equal
     
     stress_vec = []; %Stress at all nodes of the bar
 
@@ -144,16 +124,8 @@ function [max_stress] = FEMquad(nelem,ENDELEM)
         
         stress_vec = [stress_vec, stress_local];
 
-        if nelem == ENDELEM
-            subplot(3,1,1)
+        if nelem == endNELEM
             patch('Faces',[1,2,3,4],'Vertices',co(a,:),'FaceVertexCData',stress_local(1,:)','FaceColor','interp','EdgeColor','none')
-            
-            subplot(3,1,2)
-            patch('Faces',[1,2,3,4],'Vertices',co(a,:),'FaceVertexCData',stress_local(2,:)','FaceColor','interp','EdgeColor','none')
-         
-            subplot(3,1,3)
-            patch('Faces',[1,2,3,4],'Vertices',co(a,:),'FaceVertexCData',stress_local(3,:)','FaceColor','interp','EdgeColor','none')
-
         end
     end
 
@@ -183,20 +155,18 @@ function [N, J, B] = element(xi, eta, coords) %hw6, p1
 end
 function f = localbody(intpts,coords) %hw6 p2
     f = zeros(8,1);
-    t = 0.01;
-    a = 5;
-    f_body = 0;
+    t = 1;
     for i = 1:size(intpts,1)
         [N, J, B] = element(intpts(i,1), intpts(i,2), coords);
-        f = f + N'*[0;-f_body]*det(J)*t;
+        f = f + N'*[0;1e6]*det(J)*t;
     end
 end
 
 function k = localstiffnessmat(intpts,coords) %hw6 p4
     k = zeros(8,8);
-    t = 0.01;
+    t = 1;
     E = 70e9;nu = 0.3;
-    D = E/(1-nu^2).*[1, nu, 0;nu,1,0;0,0,(1-nu)/2];
+    D = E/(1+nu)/(1-2*nu) * [ 1-nu nu 0 ; nu 1-nu 0 ; 0 0 1/2-nu ];
         for i = 1:size(intpts,1)
         [N, J, B] = element(intpts(i,1), intpts(i,2), coords);
         k = k + B'*D*B*det(J)*t;
@@ -207,12 +177,12 @@ function f = localtraction(tr_node,coords) %hw6 p3
 f = zeros(8,1);
     if length(tr_node) > 0 %if nodes have traction
     
-    t = 0.01;
+    t = 1;
     intpts = [1 1/sqrt(3);1 -1/sqrt(3)];
         for i = 1:size(intpts,1)
             [N, J, B] = element(intpts(i,1), intpts(i,2), coords);
             detJstar = sqrt(J(2,1)^2 + J(2,2)^2);
-            f = f + N'*[-11439600;0]*detJstar*t;
+            f = f + N'*[1e6;0]*detJstar*t;
         end
     end
 end

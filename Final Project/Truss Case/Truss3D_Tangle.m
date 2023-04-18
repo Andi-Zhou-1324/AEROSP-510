@@ -103,17 +103,17 @@ Weight_Drone = 43.0913;
 
 
 %external forces
-force_node = [6;7];
+force_node = [4];
 
 
-F = assignForce(F,force_node, repmat([0,11439600/2],size(force_node,1),1),dof);
+F = assignForce(F,force_node, repmat([-11439600,0],size(force_node,1),1),dof);
 
 %Apply displacement BC by eliminating rows and columns of nodes 3-4 (corresponding to
 %degrees of freedom 5 to 8) - alternative (and more generic method) is the penalty approach, or
 %static condensation approach - see later class notes
 
-Nodes_fixed = [1;2];
-deletedofs = fixNode(Nodes_fixed,dof);
+Nodes_fixed = [1:3,5:7];
+deletedofs = fixNode(Nodes_fixed',dof);
 
 K(deletedofs,:) = [];
 K(:,deletedofs) = [];
@@ -162,7 +162,7 @@ function [deletedofs] = fixNode(nodes,dof)
     deletedofs = [];
     for i = 1:size(nodes,1)
         n1 = nodes(i);
-        temp =n1*dof;
+        temp =n1*dof-dof+1:n1*dof;
         deletedofs = [deletedofs;temp'];
     end
    

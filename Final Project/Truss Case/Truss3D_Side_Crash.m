@@ -15,7 +15,7 @@ height_bar = 0.01; %meter
 
 A = length_bar.*height_bar;
 alpha = 5E-6;
-D_T = 100;
+D_T = 0;
 co = [0,0,0;
       -1.47,0,0;
       0.34,-0.71,-0.55;

@@ -58,7 +58,7 @@ function [max_stress] = FEMquad(nelem,ENDELEM)
         localstiffness = localstiffnessmat(intpts,coord); %HW6, p3
         localforce = localbody(intpts,coord); %hw6, p2
         
-        tr_node = find(coord(:,1)==max(co(:,1)));%find nodes (for which x = 2, HW6) wheretraction is applied
+        tr_node = find(coord(:,1)==max(co(:,1))/2);%find nodes (for which x = 2, HW6) wheretraction is applied
         localforce = localforce + localtraction(tr_node,coord); % HW6, p4
         
         
@@ -82,7 +82,9 @@ function [max_stress] = FEMquad(nelem,ENDELEM)
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     end
     %%%%%%%%%%%%%%%%%%%BOUNDARY CONDITIONS%%%%%%%%%%%%%%%%%%%%%%%
-    tr_node = find(co(:,1)==0); %find nodes (for which x = 0) that need to be fixed
+    tr_node_1 = find(co(:,1)==0); %find nodes (for which x = 0) that need to be fixed
+    tr_node_2 = find(co(:,1)==1);
+    tr_node = [tr_node_1;tr_node_2];
     deletedofs = [2*tr_node-1;2*tr_node];%for these nodes, list of degrees of freedom
     K(deletedofs,:) = [];
     K(:,deletedofs) = [];
@@ -107,12 +109,12 @@ function [max_stress] = FEMquad(nelem,ENDELEM)
         axis equal
         hold on
         patch('Faces',e,'Vertices',co,'FaceColor','none','EdgeColor','k')
-        patch('Faces',e,'Vertices',co + reshape(u.*1E2,2,[])','FaceColor','none','EdgeColor','r')
+        patch('Faces',e,'Vertices',co + reshape(u.*1E6,2,[])','FaceColor','none','EdgeColor','r')
         hold off
-        title('Resulting Deformation (Magnified x1E2)')
+        title('Resulting Deformation (Magnified x1E6)')
         xlabel('x')
-        ylabel('y(1/1E2 m)')
-        xlabel('x(1/1E2 m)')
+        ylabel('y(1/1E6 m)')
+        xlabel('x(1/1E6 m)')
     end
 
     if nelem == ENDELEM
@@ -185,7 +187,7 @@ function f = localbody(intpts,coords) %hw6 p2
     f = zeros(8,1);
     t = 0.01;
     a = 5;
-    f_body = 0;
+    f_body = 45.*a;
     for i = 1:size(intpts,1)
         [N, J, B] = element(intpts(i,1), intpts(i,2), coords);
         f = f + N'*[0;-f_body]*det(J)*t;
@@ -212,7 +214,7 @@ f = zeros(8,1);
         for i = 1:size(intpts,1)
             [N, J, B] = element(intpts(i,1), intpts(i,2), coords);
             detJstar = sqrt(J(2,1)^2 + J(2,2)^2);
-            f = f + N'*[-11439600;0]*detJstar*t;
+            f = f + N'*[0;1E3]*detJstar*t;
         end
     end
 end
